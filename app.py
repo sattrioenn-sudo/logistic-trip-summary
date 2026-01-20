@@ -111,3 +111,20 @@ try:
     conn.close()
 except Exception as e:
     st.write("Belum ada data yang ditampilkan.")
+import io
+
+# ... (Pastikan ini berada di bawah bagian st.dataframe(df))
+
+if not df.empty:
+    # Membuat fungsi untuk mengubah data menjadi file Excel di memori
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Ringkasan_Perjalanan')
+    
+    # Tombol Download
+    st.download_button(
+        label="📥 Download Laporan ke Excel",
+        data=output.getvalue(),
+        file_name="Laporan_Perjalanan_Logistik.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
