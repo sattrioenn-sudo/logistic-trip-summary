@@ -6,7 +6,19 @@ from dotenv import load_dotenv
 import os
 
 # Load konfigurasi dari file .env
-load_dotenv()
+def get_connection():
+    try:
+        conn = mysql.connector.connect(
+            host=st.secrets["DB_HOST"],
+            port=st.secrets["DB_PORT"],
+            user=st.secrets["DB_USER"],
+            password=st.secrets["DB_PASSWORD"],
+            database=st.secrets["DB_NAME"]
+        )
+        return conn
+    except Error as e:
+        st.error(f"Gagal koneksi ke database: {e}")
+        return None
 
 # Fungsi Koneksi Database
 def get_connection():
