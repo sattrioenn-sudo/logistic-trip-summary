@@ -23,7 +23,7 @@ st.markdown("""
 
 # 3. KREDENSIAL LOGIN (Ganti sesuka Anda)
 USER_ADMIN = "satrio"
-PASS_ADMIN = "kcs_2026
+PASS_ADMIN = "kcs_2026"
 
 # 4. FUNGSI KONEKSI DATABASE (Tetap pakai Secrets Anda)
 def get_connection():
