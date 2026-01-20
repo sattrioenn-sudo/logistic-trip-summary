@@ -127,3 +127,40 @@ else:
             )
     except:
         st.info("Sistem siap. Belum ada data masuk.")
+        # --- FITUR HAPUS DATA ---
+st.divider()
+st.subheader("🗑️ Hapus Data Surat Jalan")
+
+with st.expander("Klik di sini jika ingin menghapus data"):
+    no_sj_hapus = st.text_input("Masukkan Nomor Surat Jalan yang ingin dihapus")
+    konfirmasi_hapus = st.checkbox("Saya yakin ingin menghapus data ini secara permanen")
+    btn_hapus = st.button("HAPUS SEKARANG", type="primary")
+
+    if btn_hapus:
+        if not no_sj_hapus:
+            st.warning("Silakan masukkan Nomor Surat Jalan terlebih dahulu.")
+        elif not konfirmasi_hapus:
+            st.warning("Silakan centang kotak konfirmasi untuk menghapus.")
+        else:
+            try:
+                db = get_connection()
+                curr = db.cursor()
+                
+                # Cek dulu apakah datanya ada
+                curr.execute("SELECT * FROM ringkasan_perjalanan WHERE no_surat_jalan = %s", (no_sj_hapus,))
+                data_ada = curr.fetchone()
+                
+                if data_ada:
+                    # Jalankan perintah hapus
+                    query_delete = "DELETE FROM ringkasan_perjalanan WHERE no_surat_jalan = %s"
+                    curr.execute(query_delete, (no_sj_hapus,))
+                    db.commit()
+                    st.success(f"✅ Data dengan No SJ {no_sj_hapus} berhasil dihapus!")
+                    db.close()
+                    # Refresh otomatis agar tabel terupdate
+                    st.rerun()
+                else:
+                    st.error("❌ Nomor Surat Jalan tidak ditemukan di database.")
+                    db.close()
+            except Exception as e:
+                st.error(f"Gagal menghapus: {e}")
