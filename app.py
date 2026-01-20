@@ -5,8 +5,8 @@ import io
 
 # --- KONFIGURASI LOGIN ---
 # Silakan ganti username dan password sesuai keinginan Anda
-USER_ADMIN = "admin"
-PASS_ADMIN = "pabrik123"
+USER_ADMIN = "satrio"
+PASS_ADMIN = "kcs_2026"
 
 def check_login():
     if "logged_in" not in st.session_state:
