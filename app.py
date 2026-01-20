@@ -3,29 +3,23 @@ import mysql.connector
 import pandas as pd
 import io
 
-# 1. KONFIGURASI HALAMAN (Tampilan Tab Browser)
-st.set_page_config(page_title="Logistik App", page_icon="🚚", layout="wide")
+# 1. KONFIGURASI HALAMAN
+st.set_page_config(page_title="Logistics Dashboard", page_icon="📊", layout="wide")
 
-# 2. CUSTOM CSS (Bikin tampilan lebih rapi dan tombol lebih bagus)
+# 2. STYLE CSS CUSTOM (Bikin Tampilan Mewah)
 st.markdown("""
     <style>
-    .main { background-color: #f8f9fa; }
-    div.stButton > button:first-child {
-        background-color: #007bff; color: white; border-radius: 8px;
-        height: 3em; width: 100%; font-weight: bold; border: none;
-    }
-    .login-box {
-        padding: 30px; background-color: white; border-radius: 15px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
+    [data-testid="stMetricValue"] { font-size: 25px; color: #007bff; }
+    .stButton>button { border-radius: 8px; font-weight: bold; }
+    .main-header { text-align: center; padding: 20px; background: white; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. KREDENSIAL LOGIN (Ganti sesuka Anda)
+# 3. KREDENSIAL LOGIN
 USER_ADMIN = "satrio"
 PASS_ADMIN = "kcs_2026"
 
-# 4. FUNGSI KONEKSI DATABASE (Tetap pakai Secrets Anda)
+# 4. FUNGSI KONEKSI DATABASE
 def get_connection():
     return mysql.connector.connect(
         host=st.secrets["DB_HOST"],
@@ -35,132 +29,52 @@ def get_connection():
         database=st.secrets["DB_NAME"]
     )
 
-# --- FUNGSI TAMPILAN LOGIN ---
-def show_login():
-    # Membuat grid agar box login ada di tengah
-    _, col_mid, _ = st.columns([1, 1.5, 1])
-    
-    with col_mid:
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        st.markdown("<h1 style='text-align: center;'>🚚 LOGISTICS SYSTEM</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: gray;'>Monitoring Surat Jalan Pabrik</p>", unsafe_allow_html=True)
-        
-        with st.container():
-            st.markdown("<div class='login-box'>", unsafe_allow_html=True)
-            user_in = st.text_input("Username", placeholder="Masukkan ID anda")
-            pass_in = st.text_input("Password", type="password", placeholder="Masukkan Password")
-            
-            if st.button("LOGIN SEKARANG"):
-                if user_in == USER_ADMIN and pass_in == PASS_ADMIN:
-                    st.session_state["logged_in"] = True
-                    st.rerun()
-                else:
-                    st.error("Username atau Password Salah!")
-            st.markdown("</div>", unsafe_allow_html=True)
-
-# --- LOGIKA APLIKASI ---
+# --- FUNGSI LOGIN ---
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
 
 if not st.session_state["logged_in"]:
-    show_login()
-else:
-    # --- TAMPILAN SETELAH LOGIN (DASHBOARD) ---
-    with st.sidebar:
-        st.title("Admin Panel")
-        st.write(f"User: **{USER_ADMIN}**")
-        if st.button("Keluar / Logout"):
-            st.session_state["logged_in"] = False
-            st.rerun()
-
-    st.title("🚚 Input Data Perjalanan")
-    
-    # FORM INPUT DATA
-    with st.form("main_form", clear_on_submit=True):
-        c1, c2 = st.columns(2)
-        with c1:
-            tgl = st.date_input("Tanggal Surat Jalan")
-            no_sj = st.text_input("Nomor Surat Jalan")
-            sopir = st.text_input("Nama Sopir")
-            plat = st.text_input("Plat Nomor Kendaraan")
-        with c2:
-            customer = st.text_input("Nama Customer")
-            alamat = st.text_area("Alamat Pengiriman")
-            keluar = st.time_input("Jam Keluar")
-            masuk = st.time_input("Jam Masuk")
-        
-        btn_simpan = st.form_submit_button("SIMPAN DATA KE DATABASE")
-
-    if btn_simpan:
-        try:
-            db = get_connection()
-            curr = db.cursor()
-            query = "INSERT INTO ringkasan_perjalanan (tgl_surat_jalan, no_surat_jalan, nama_sopir, plat_nomor, nama_customer, alamat_kirim, jam_keluar, jam_masuk) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)"
-            curr.execute(query, (tgl, no_sj, sopir, plat, customer, alamat, str(keluar), str(masuk)))
-            db.commit()
-            st.success("✅ Berhasil! Data sudah tersimpan di TiDB Cloud.")
-            db.close()
-        except Exception as e:
-            st.error(f"Error Database: {e}")
-
-    # TABEL LAPORAN & DOWNLOAD EXCEL
-    st.divider()
-    st.subheader("📋 Data Perjalanan Terbaru")
-    try:
-        db = get_connection()
-        df = pd.read_sql("SELECT * FROM ringkasan_perjalanan ORDER BY created_at DESC LIMIT 15", db)
-        db.close()
-
-        if not df.empty:
-            st.dataframe(df, use_container_width=True)
-            
-            # Persiapan Download Excel
-            output = io.BytesIO()
-            with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                df.to_excel(writer, index=False)
-            
-            st.download_button(
-                label="📥 Download Data ke Excel",
-                data=output.getvalue(),
-                file_name="Laporan_Logistik.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
-    except:
-        st.info("Sistem siap. Belum ada data masuk.")
-        # --- FITUR HAPUS DATA ---
-st.divider()
-st.subheader("🗑️ Hapus Data Surat Jalan")
-
-with st.expander("Klik di sini jika ingin menghapus data"):
-    no_sj_hapus = st.text_input("Masukkan Nomor Surat Jalan yang ingin dihapus")
-    konfirmasi_hapus = st.checkbox("Saya yakin ingin menghapus data ini secara permanen")
-    btn_hapus = st.button("HAPUS SEKARANG", type="primary")
-
-    if btn_hapus:
-        if not no_sj_hapus:
-            st.warning("Silakan masukkan Nomor Surat Jalan terlebih dahulu.")
-        elif not konfirmasi_hapus:
-            st.warning("Silakan centang kotak konfirmasi untuk menghapus.")
-        else:
-            try:
-                db = get_connection()
-                curr = db.cursor()
-                
-                # Cek dulu apakah datanya ada
-                curr.execute("SELECT * FROM ringkasan_perjalanan WHERE no_surat_jalan = %s", (no_sj_hapus,))
-                data_ada = curr.fetchone()
-                
-                if data_ada:
-                    # Jalankan perintah hapus
-                    query_delete = "DELETE FROM ringkasan_perjalanan WHERE no_surat_jalan = %s"
-                    curr.execute(query_delete, (no_sj_hapus,))
-                    db.commit()
-                    st.success(f"✅ Data dengan No SJ {no_sj_hapus} berhasil dihapus!")
-                    db.close()
-                    # Refresh otomatis agar tabel terupdate
+    _, col_mid, _ = st.columns([1, 1.2, 1])
+    with col_mid:
+        st.markdown("<br><br><h1 style='text-align: center;'>🚚 LOGIN SYSTEM</h1>", unsafe_allow_html=True)
+        with st.form("login"):
+            u = st.text_input("Username")
+            p = st.text_input("Password", type="password")
+            if st.form_submit_button("MASUK"):
+                if u == USER_ADMIN and p == PASS_ADMIN:
+                    st.session_state["logged_in"] = True
                     st.rerun()
-                else:
-                    st.error("❌ Nomor Surat Jalan tidak ditemukan di database.")
-                    db.close()
-            except Exception as e:
-                st.error(f"Gagal menghapus: {e}")
+                else: st.error("Akses Ditolak!")
+    st.stop()
+
+# --- DASHBOARD UTAMA (SETELAH LOGIN) ---
+with st.sidebar:
+    st.image("https://cdn-icons-png.flaticon.com/512/1532/1532674.png", width=100)
+    st.title("Admin Panel")
+    st.write(f"Logged in: **{USER_ADMIN}**")
+    if st.button("🚪 Logout"):
+        st.session_state["logged_in"] = False
+        st.rerun()
+
+# --- BAGIAN HEADER & STATISTIK ---
+st.markdown("<div class='main-header'><h1>📊 LOGISTICS COMMAND CENTER</h1></div>", unsafe_allow_html=True)
+
+try:
+    db = get_connection()
+    df_stat = pd.read_sql("SELECT * FROM ringkasan_perjalanan", db)
+    db.close()
+    
+    # Barisan Statistik Cepat (KPI)
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Total Pengiriman", f"{len(df_stat)} Trip")
+    m2.metric("Total Sopir", f"{df_stat['nama_sopir'].nunique()} Orang")
+    m3.metric("Total Customer", f"{df_stat['nama_customer'].nunique()} PT/Toko")
+    m4.metric("Update Terakhir", df_stat['tgl_surat_jalan'].max() if not df_stat.empty else "-")
+except:
+    st.warning("Gagal memuat statistik. Pastikan database terhubung.")
+
+# --- TABS (MENU) ---
+tab1, tab2, tab3 = st.tabs(["➕ Input Data Baru", "📋 Laporan & Download", "🗑️ Pengaturan / Hapus"])
+
+with tab1:
+    st.subheader("Form
