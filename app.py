@@ -96,3 +96,18 @@ if conn:
     df = pd.read_sql(query_view, conn)
     st.dataframe(df, use_container_width=True)
     conn.close()
+st.divider()
+st.subheader("📋 Laporan Perjalanan Terbaru")
+
+try:
+    conn = get_connection()
+    # Perintah untuk mengambil 10 data terbaru
+    query = "SELECT * FROM ringkasan_perjalanan ORDER BY created_at DESC LIMIT 10"
+    df = pd.read_sql(query, conn)
+    
+    # Menampilkan tabel di web
+    st.dataframe(df, use_container_width=True)
+    
+    conn.close()
+except Exception as e:
+    st.write("Belum ada data yang ditampilkan.")
