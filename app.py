@@ -17,7 +17,9 @@ def get_connection():
         port=st.secrets["DB_PORT"],
         user=st.secrets["DB_USER"],
         password=st.secrets["DB_PASSWORD"],
-        database=st.secrets["DB_NAME"]
+        database=st.secrets["DB_NAME"],
+        ssl_verify_cert=False, # Penting untuk TiDB Cloud Serverless
+        ssl_disabled=False     # Mengaktifkan SSL
     )
 
 # 3. SISTEM LOGIN (TAMPILAN BERWARNA)
